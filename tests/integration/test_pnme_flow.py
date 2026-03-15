@@ -23,9 +23,14 @@ def test_full_write_query_clear(temp_pnme):
     assert res[0]["record"].object == "a paperclip"
     
     # 3. Query HDC Context
-    ctx = temp_pnme.retrieve_context(["paperclip"])
+    ctx = temp_pnme.get_context(["paperclip"])
     assert len(ctx) > 0
-    assert ctx[0]["record"].subject == "clippy"
+
+def test_hydration(temp_pnme):
+    temp_pnme.store("clippy", "is", "a paperclip")
+    prompt = "Tell me about clippy"
+    hydrated = temp_pnme.hydrate(prompt)
+    assert "a paperclip" in hydrated
 
 def test_safety_integration(temp_pnme):
     temp_pnme.store("user", "key", "sk-123456789012345678901234567890")

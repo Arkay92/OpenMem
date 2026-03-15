@@ -1,77 +1,81 @@
-# PNME: Persistent Neuro-Symbolic Memory Engine
+# OpenMem: Persistent Neuro-Symbolic Memory (PNME)
 
-PNME is a long-term memory layer for AI agents, combining **Hyperdimensional Computing (HDC)** with **Symbolic Reasoning**. It works with Claude Code, OpenClaw, and any Python agent framework.
+**A high-performance, persistent neuro-symbolic memory engine for LLM agents using Hyperdimensional Computing (HDC) and symbolic triples.**
+
+OpenMem (PNME) provides a durable long-term memory layer that survives across sessions, tools, and agents. It acts as a memory coprocessor, allowing agents to store facts, retrieve relevant context, and learn associations over time.
 
 ## Installation
 
 ```bash
-pip install .
+# Clone the repository
+git clone https://github.com/EasyTees/OpenMem
+cd OpenMem
+
+# Install as a package
+pip install -e .
 ```
 
-## Features
+## Core Features
 
-- **Semantic Memory**: Store and retrieve facts as (Subject, Relation, Object) triples with rich metadata.
-- **HDC Encoding**: Uses 10,000-dimensional vectors with **Role-Vector Binding** for robust associative recall.
-- **Hybrid Retrieval**: Ranked results combining symbolic matching, HDC similarity, recency, and memory strength.
-- **Memory Lifecycle**: Biological-inspired reinforcement, decay, and consolidation (Episodic -> Semantic).
-- **Context Hydration**: Automated keyword-based context injection for agent prompts.
-- **Memory Extraction**: Automatic distillation of semantic facts from dialogue logs.
-- **Safety & Privacy**: Inbuilt secret detection and redaction for sensitive info (API keys, etc.).
-- **Persistence**: SQLite-backed storage with WAL mode and versioned migrations.
-- **Agent Integration**: Pre-built tools for Claude Code and plugins for OpenClaw.
-
-## Quick Start
-
-```python
-from pnme.api import PNME
-
-# Initialize engine
-memory = PNME("memory.db")
-
-# Store a fact
-memory.store("user", "prefers", "rust", context="session_1")
-
-# Query with associative recall
-results = memory.query(subject="user", relation="prefers")
-print(results[0]['symbol']) # Output: rust
-```
+- **Principled HDC Encoding**: Uses 10,000-dimensional bipolar vectors with deterministic hash-based seeds and role-vector binding.
+- **Hybrid Retrieval**: Combines exact symbolic filtering with sub-symbolic HDC unbinding and multi-factor ranking (recency, strength, provenance).
+- **Audit & Analytics**: Integrated access logging and event tracking for memory lifecycle analysis.
+- **Portability**: JSONL export/import support for cross-system memory migration.
+- **Safety**: Automated scrubbing of sensitive information (secrets, keys) before storage.
 
 ## Agent Integrations
 
-### Claude Code
+### 1. Claude Code
 
-To use PNME with Claude Code, you can register the memory tools in your agent loop:
+OpenMem integrates with Claude via a structured tool adapter. To use it, import the adapter and register the tools:
 
 ```python
-from pnme.integrations.claude_tools import get_claude_tools, handle_tool_call
+from pnme.integrations.claude_tools import ClaudeMemoryAdapter
 
-# Get tool definitions for Claude's tool use
-tools = get_claude_tools()
+# Initialize adapter
+adapter = ClaudeMemoryAdapter(db_path="my_memory.db")
+tools = adapter.get_tool_definitions()
+
+# In your Claude tool handler:
+def on_tool_call(name, args):
+    return adapter.handle_tool_call(name, args)
 ```
 
-Supported tools: `memory_store`, `memory_query`, `memory_hydrate`, `memory_extract`.
+**Available Tools:**
+- `memory_store`: Save a specific fact (S, R, O).
+- `memory_absorb`: Bulk-extract facts from a text block.
+- `memory_query`: Pattern-based retrieval.
+- `memory_hydrate`: Inject context into the prompt.
 
-### OpenClaw
+### 2. OpenClaw
 
-To use PNME as an OpenClaw plugin, initialize the plugin and register its skills:
+Register OpenMem as a plugin in your OpenClaw setup:
 
 ```python
 from pnme.integrations.openclaw_plugin import setup_plugin
 
-# Initialize plugin
-plugin = setup_plugin({"db_path": "pnme_memory.db"})
-
-# Register skills
-skills = plugin.get_skills()
-# Skills: store_memory, query_memory, recall_associations, retrieve_context
+# Setup the memory plugin
+memory_plugin = setup_plugin({"db_path": "openclaw_mem.db"})
+agent.register_plugin(memory_plugin)
 ```
 
-## Project Structure
+## Quick Start (Python)
 
-- `pnme/hdc`: Vector operations and encoding.
-- `pnme/storage`: Persistence layer.
-- `pnme/core`: Main engine and recall logic.
-- `pnme/integrations`: Claude and OpenClaw adapters.
+```python
+from pnme.api import PNME
+
+memory = PNME()
+
+# Store a fact
+memory.store("DeepSeek-V3", "released_by", "DeepSeek")
+
+# Absorb facts from text
+memory.absorb("Claude 3.5 Sonnet is a model by Anthropic. It supports computer use.")
+
+# Retrieve hydrated context
+prompt = "Tell me about Anthropic models."
+hydrated_prompt = memory.hydrate(prompt)
+```
 
 ## License
 

@@ -1,5 +1,6 @@
 import numpy as np
-from .ops import create_vector, bind, bundle, permute
+import hashlib
+from .ops import create_vector, bind, bundle, unbind
 
 class HDCEncoder:
     def __init__(self, dim=10000):
@@ -11,12 +12,16 @@ class HDCEncoder:
         self.role_object = create_vector(dim, seed=103)
         self.role_context = create_vector(dim, seed=104)
 
+    def _get_deterministic_seed(self, symbol):
+        """Generate a deterministic 32-bit integer seed from a symbol string."""
+        h = hashlib.sha256(symbol.encode()).digest()
+        return int.from_bytes(h[:4], "big")
+
     def get_vector(self, symbol):
-        """Retrieve or create a base vector for a symbol."""
+        """Retrieve or create a base vector for a symbol using hash-based determinism."""
         if symbol not in self.symbol_map:
-            # Deterministic generation based on symbol name hashing could be an improvement
-            # but for now we rely on the internal map.
-            self.symbol_map[symbol] = create_vector(self.dim)
+            seed = self._get_deterministic_seed(symbol)
+            self.symbol_map[symbol] = create_vector(self.dim, seed=seed)
         return self.symbol_map[symbol]
 
     def encode_triple(self, subject, relation, object_val, context=None):
@@ -35,24 +40,36 @@ class HDCEncoder:
             
         return bundle(vectors)
 
-    def encode_query(self, subject=None, relation=None, object_val=None):
+    def encode_query(self, subject=None, relation=None, object_val=None, context=None):
         """
-        Produce a query context vector with one missing part.
-        In the bundle approach, we use the role vector of the missing part to extract it.
-        Example: To find ?, we start with the Memory vector.
-        Actually, for bundle-based memory, recall usually involves similarity against the whole bundle
-        or partial unbinding.
+        Produce a partial-query bundle vector and identify the missing role.
+        Formula: bundle([bind(Role_i, Symbol_i) for i in known_roles])
         """
-        # For compatibility with existing find_target:
-        # If we use XOR/Bind-based triple: bind(p(s), R, O)
-        # Roles were: p(s) for subject, ID for relation, ID for object.
-        # Transitioning to the bundle-based approach requires updating recall logic.
-        
+        known = []
+        missing = None
+
         if subject is None:
-            return None, "subject" # Signal role-based retrieval
+            missing = "subject"
+        else:
+            known.append(bind(self.role_subject, self.get_vector(subject)))
+
         if relation is None:
-            return None, "relation"
+            missing = "relation" if missing is None else "multiple"
+        else:
+            known.append(bind(self.role_relation, self.get_vector(relation)))
+
         if object_val is None:
-            return None, "object"
-        
-        return None, None
+            missing = "object" if missing is None else "multiple"
+        else:
+            known.append(bind(self.role_object, self.get_vector(object_val)))
+
+        if context is not None:
+            known.append(bind(self.role_context, self.get_vector(context)))
+
+        if missing == "multiple":
+            # For now, we only support one missing role in direct associative recall
+            # and unbinding.
+            pass
+
+        query_v = bundle(known) if known else None
+        return query_v, missing

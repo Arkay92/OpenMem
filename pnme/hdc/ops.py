@@ -11,6 +11,10 @@ def bind(v1, v2):
     """Binding operation: element-wise multiplication (XOR in bipolar space)."""
     return v1 * v2
 
+def unbind(v1, v2):
+    """Unbinding operation: identical to bind for bipolar vectors (v1 * v2)."""
+    return v1 * v2
+
 def bundle(vectors):
     """Bundling operation: element-wise sum followed by thresholding."""
     v_sum = np.sum(vectors, axis=0)

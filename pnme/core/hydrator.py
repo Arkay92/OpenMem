@@ -2,31 +2,60 @@ import re
 from typing import List, Dict, Any
 
 class ContextHydrator:
-    def __init__(self, pnme):
+    def __init__(self, pnme, max_tokens=1000):
         self.pnme = pnme
+        self.max_tokens = max_tokens  # Simplified token count (using chars/4 heuristic)
 
     def extract_keywords(self, text: str) -> List[str]:
-        """Extract potential keywords for memory lookup."""
-        # Simple extraction: words > 4 chars, ignoring common stop words
+        """Extract high-value keywords for memory lookup."""
+        # words > 3 chars, ignoring some common stop words
         words = re.findall(r'\b\w{4,}\b', text.lower())
-        stop_words = {'about', 'which', 'their', 'there', 'would', 'could', 'should'}
-        return [w for w in words if w not in stop_words]
+        stop_words = {'about', 'which', 'their', 'there', 'would', 'could', 'should', 'please', 'thank'}
+        return list(set([w for w in words if w not in stop_words]))
 
-    def hydrate_context(self, prompt: str, top_k=3) -> str:
+    def hydrate_context(self, prompt: str, top_k=5) -> str:
         """
-        Search memory for prompt keywords and prepend relevant facts to the prompt.
+        Inject relevant long-term context into the prompt while respecting budgets.
         """
         keywords = self.extract_keywords(prompt)
         if not keywords:
             return prompt
             
-        memories = self.pnme.retrieve_context(keywords)
+        # Call engine context retrieval
+        memories = self.pnme.get_context(keywords, top_k=top_k)
         if not memories:
             return prompt
             
-        context_str = "\n[Relevant Long-term Memories]:\n"
-        for res in memories[:top_k]:
-            rec = res['record']
-            context_str += f"- {rec.subject} {rec.relation} {rec.object} (Source: {rec.source})\n"
+        context_lines = []
+        current_budget = self.max_tokens * 4 # Convert token budget to char estimate
         
-        return context_str + "\n" + prompt
+        header = "\n<long_term_memory>\n"
+        footer = "</long_term_memory>\n"
+        budget_used = len(header) + len(footer)
+        
+        for res in memories:
+            rec = res['record']
+            line = f"- {rec.subject} {rec.relation} {rec.object}\n"
+            if budget_used + len(line) > current_budget:
+                break
+            context_lines.append(line)
+            budget_used += len(line)
+            
+        if not context_lines:
+            return prompt
+            
+        context_block = header + "".join(context_lines) + footer
+        return context_block + prompt
+
+    def hydrate_with_template(self, prompt: str, template: str = "{context}\n{prompt}", top_k=5) -> str:
+        """
+        Apply context using a custom template.
+        """
+        keywords = self.extract_keywords(prompt)
+        memories = self.pnme.get_context(keywords, top_k=top_k)
+        
+        context_str = ""
+        if memories:
+            context_str = "\n".join([f"- {m['record'].subject} {m['record'].relation} {m['record'].object}" for m in memories])
+            
+        return template.format(context=context_str, prompt=prompt)
