@@ -45,6 +45,10 @@ class PNME:
         """Retrieve relevant memories for a set of keywords."""
         return self.engine.get_context(keywords, top_k=top_k)
 
+    def retrieve_context(self, keywords: List[str], top_k: int = 5) -> List[Dict[str, Any]]:
+        """Alias for get_context."""
+        return self.get_context(keywords, top_k=top_k)
+
     def export_data(self, path: str):
         """Export all memory data to JSONL."""
         self.engine.export_memory(path)

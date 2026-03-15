@@ -32,6 +32,16 @@ def test_hydration(temp_pnme):
     hydrated = temp_pnme.hydrate(prompt)
     assert "a paperclip" in hydrated
 
+def test_regex_repairs(temp_pnme):
+    # Test hyphens and dots (repaired regex Stage)
+    text = "DeepSeek-V3 is a model. Claude-3.5 is fast."
+    count = temp_pnme.absorb(text)
+    assert count >= 2
+    
+    res = temp_pnme.query(subject="deepseek-v3")
+    assert len(res) > 0
+    assert res[0]["record"].object == "a model"
+
 def test_multi_role_query(temp_pnme):
     # Store a complete fact
     temp_pnme.store("alice", "works_at", "wonderland")
@@ -42,15 +52,13 @@ def test_multi_role_query(temp_pnme):
     symbols = res[0]["extracted_symbols"]
     assert symbols["relation"]["symbol"] == "works_at"
     assert symbols["object"]["symbol"] == "wonderland"
-
-def test_absorb(temp_pnme):
-    # Test regex-based absorption (Stage 11 composite)
-    text = "Bob likes pizza. Alice is a coder."
-    count = temp_pnme.absorb(text)
-    assert count >= 2
     
-    res = temp_pnme.query(subject="bob", relation="likes")
-    assert res[0]["record"].object == "pizza"
+    # Query with only relation
+    res2 = temp_pnme.query(relation="works_at")
+    assert len(res2) > 0
+    symbols2 = res2[0]["extracted_symbols"]
+    assert symbols2["subject"]["symbol"] == "alice"
+    assert symbols2["object"]["symbol"] == "wonderland"
 
 def test_safety_integration(temp_pnme):
     temp_pnme.store("user", "key", "sk-123456789012345678901234567890")

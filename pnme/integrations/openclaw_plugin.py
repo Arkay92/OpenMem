@@ -12,7 +12,8 @@ class PNMEPlugin:
             "store_memory": self.store_memory,
             "query_memory": self.query_memory,
             "recall_associations": self.recall_associations,
-            "get_context": self.get_context
+            "get_context": self.get_context,
+            "retrieve_context": self.get_context
         }
 
     def store_memory(self, subject, relation, object_val, context=""):
