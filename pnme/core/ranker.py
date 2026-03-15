@@ -5,25 +5,31 @@ class Ranker:
     # Pre-defined weight profiles for different retrieval needs
     PROFILES = {
         "balanced": {
-            "symbolic": 0.4,
-            "vector": 0.3,
-            "recency": 0.15,
-            "strength": 0.1,
-            "provenance": 0.05
+            "symbolic": 0.35,
+            "vector": 0.25,
+            "recency": 0.1,
+            "strength": 0.05,
+            "provenance": 0.05,
+            "text_boost": 0.15,
+            "confidence": 0.05
         },
-        "semantic": {  # Prioritize deep HDC similarity over exact matches
-            "symbolic": 0.2,
-            "vector": 0.6,
+        "semantic": {
+            "symbolic": 0.15,
+            "vector": 0.5,
             "recency": 0.05,
             "strength": 0.1,
-            "provenance": 0.05
+            "provenance": 0.05,
+            "text_boost": 0.1,
+            "confidence": 0.05
         },
-        "episodic": {  # Prioritize recency and specific source/session
-            "symbolic": 0.3,
-            "vector": 0.2,
-            "recency": 0.4,
+        "episodic": {
+            "symbolic": 0.25,
+            "vector": 0.15,
+            "recency": 0.35,
             "strength": 0.05,
-            "provenance": 0.05
+            "provenance": 0.1,
+            "text_boost": 0.05,
+            "confidence": 0.05
         }
     }
 
@@ -36,8 +42,11 @@ class Ranker:
         query_context contains:
             - symbolic_match: bool
             - hdc_similarity: float
+            - text_boost: float (Stage 15)
             - current_agent_id: str (optional)
             - preferred_source: str (optional)
+            - privacy_filter: int (optional)
+            - tags: List[str] (optional)
         """
         scores = {}
         
@@ -64,7 +73,25 @@ class Ranker:
             prov_score += 0.5
         if query_context.get("current_agent_id") == memory_record.agent_id:
             prov_score += 0.5
-        scores["provenance"] = prov_score
+        
+        # Tag match bonus
+        query_tags = query_context.get("tags", [])
+        if query_tags and memory_record.tags:
+            match_count = len(set(query_tags) & set(memory_record.tags))
+            prov_score += 0.2 * match_count
+            
+        scores["provenance"] = min(1.0, prov_score)
+
+        # 6. Text Boost (Stage 15 natural language relevance)
+        scores["text_boost"] = query_context.get("text_boost", 0.0)
+
+        # 7. Confidence (Record-level evidence strength)
+        scores["confidence"] = memory_record.confidence
+
+        # Privacy Filter (Hard Constraint or Penalty)
+        privacy_limit = query_context.get("privacy_filter", 100)
+        if memory_record.privacy_level > privacy_limit:
+            return 0.0, {"blocked": "privacy_violation"}
         
         # Calculate weighted sum based on the active profile
         final_score = 0.0

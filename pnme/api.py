@@ -30,12 +30,13 @@ class PNME:
         return len(triples)
 
     def query(self, 
+              query_text: Optional[str] = None,
               subject: Optional[str] = None, 
               relation: Optional[str] = None, 
               obj: Optional[str] = None,
               top_k: int = 5) -> List[Dict[str, Any]]:
-        """Query memory using partial triples with hybrid ranking."""
-        return self.engine.query(subject=subject, relation=relation, obj=obj, top_k=top_k)
+        """Query memory using natural language or partial triples with hybrid ranking."""
+        return self.engine.query(query_text=query_text, subject=subject, relation=relation, obj=obj, top_k=top_k)
 
     def hydrate(self, prompt: str, top_k: int = 5) -> str:
         """Inject relevant long-term context into a prompt."""

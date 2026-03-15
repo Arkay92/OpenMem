@@ -64,6 +64,7 @@ class PNMEEngine:
         """Query memory with Hybrid Ranking and optional reinforcement."""
         lc = self.lifecycle if reinforce else None
         return self.retrieval.execute_query(
+            query_text=query_text,
             subject=subject, relation=relation, obj=obj, 
             top_k=top_k, lifecycle=lc
         )

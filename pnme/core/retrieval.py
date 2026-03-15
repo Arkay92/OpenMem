@@ -7,43 +7,58 @@ class RetrievalPipeline:
         self.encoder = encoder
         self.ranker = ranker
 
-    def execute_query(self, subject=None, relation=None, obj=None, top_k=5, lifecycle=None):
-        """Execute a structured query with hybrid ranking."""
+    def execute_query(self, query_text=None, subject=None, relation=None, obj=None, top_k=5, lifecycle=None):
+        """Execute a hybrid query utilizing symbolic, HDC, and text-based keywords."""
         records = self.store.get_all_records()
         memories = [r.to_dict() for r in records]
         
+        # 1. Broad Text Selection (if query_text exists)
+        text_boosts = {}
+        if query_text:
+            import re
+            keywords = re.findall(r'\w+', query_text.lower())
+            if keywords:
+                assoc_results = self.get_associative_context(keywords, top_k=top_k*2)
+                for res in assoc_results:
+                    text_boosts[res["record"].memory_id] = res["score"]
+
         final_results = []
         
+        # 2. Hybrid Search (Symbolic/HDC/Text)
         if subject or relation or obj:
             # Symbolic-based HDC recall
-            query_ctx_v, missing_role = self.encoder.encode_query(subject, relation, obj)
+            query_ctx_v, missing_roles = self.encoder.encode_query(subject, relation, obj)
             
-            if missing_role:
-                hdc_results = find_target(query_ctx_v, memories, self.encoder, missing_role,
-                                          subject=subject, relation=relation, obj=obj)
+            # Optimized find_target (uses Stage 14 candidate filtering)
+            hdc_results = find_target(query_ctx_v, memories, self.encoder, missing_roles,
+                                      subject=subject, relation=relation, obj=obj, top_k=top_k*2)
+            
+            for res in hdc_results:
+                rec_dict = res["source_memory"]
+                rec = next((r for r in records if r.memory_id == rec_dict['memory_id']), None)
                 
-                for res in hdc_results:
-                    rec = res["source_memory"]
-                    # If we got a dict, try to find the actual record object for ranking
-                    if isinstance(rec, dict):
-                        rec = next((r for r in records if r.memory_id == rec['memory_id']), None)
+                if rec:
+                    if lifecycle:
+                        lifecycle.reinforce(rec)
                     
-                    if rec:
-                        if lifecycle:
-                            lifecycle.reinforce(rec)
-                        
-                        self.store.log_access(rec.memory_id, query_type="symbolic")
-                        
-                        score, breakdown = self.ranker.compute_hybrid_score(rec, {
-                            "symbolic_match": True,
-                            "hdc_similarity": res["confidence"]
-                        })
-                        final_results.append({
-                            "record": rec,
-                            "score": score,
-                            "explanation": breakdown,
-                            "extracted_symbols": res.get("extracted_symbols")
-                        })
+                    self.store.log_access(rec.memory_id, query_type="hybrid")
+                    
+                    boost = text_boosts.get(rec.memory_id, 0.0)
+                    score, breakdown = self.ranker.compute_hybrid_score(rec, {
+                        "symbolic_match": True,
+                        "hdc_similarity": res["confidence"],
+                        "text_boost": boost
+                    })
+                    
+                    final_results.append({
+                        "record": rec,
+                        "score": score,
+                        "explanation": breakdown,
+                        "extracted_symbols": res.get("extracted_symbols")
+                    })
+        elif query_text:
+            # Pure text-based associative query
+            return self.get_associative_context(keywords, top_k=top_k, lifecycle=lifecycle)
         else:
             # Broad scan / No constraints
             for rec in records:

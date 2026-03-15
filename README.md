@@ -1,17 +1,16 @@
-# OpenMem: Persistent Neuro-Symbolic Memory (PNME)
+# OpenMem: Persistent Neuro-Symbolic Memory
+**A high-performance, production-ready memory coprocessor for LLM agents.**
 
-**A high-performance, persistent neuro-symbolic memory engine for LLM agents using Hyperdimensional Computing (HDC) and symbolic triples.**
-
-OpenMem (PNME) provides a durable long-term memory layer that survives across sessions, tools, and agents. It acts as a memory coprocessor, allowing agents to store facts, retrieve relevant context, and learn associations over time.
+OpenMem (PNME) provides a durable long-term memory layer that survives across sessions, crashes, and restarts. By combining Hyperdimensional Computing (HDC) with symbolic triples, it offers high-speed retrieval, principled association, and structured fact management.
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/EasyTees/OpenMem
+git clone https://github.com/OpenMem-Project/OpenMem
 cd OpenMem
 
-# Install as a package
+# Install dependencies and package
 pip install -e .
 ```
 
