@@ -42,7 +42,7 @@ class RetrievalPipeline:
                             "record": rec,
                             "score": score,
                             "explanation": breakdown,
-                            "extracted_symbol": res.get("symbol")
+                            "extracted_symbols": res.get("extracted_symbols")
                         })
         else:
             # Broad scan / No constraints

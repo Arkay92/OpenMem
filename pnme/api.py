@@ -9,10 +9,10 @@ class PNME:
     High-level API for the Persistent Neuro-Symbolic Memory Engine.
     Designed to be used as a memory coprocessor for LLM agents.
     """
-    def __init__(self, db_path: str = "pnme_memory.db", dim: int = 10000):
+    def __init__(self, db_path: str = "pnme_memory.db", dim: int = 10000, anthropic_key: Optional[str] = None):
         self.engine = PNMEEngine(db_path, dim)
         self.hydrator = ContextHydrator(self)
-        self.extractor = MemoryExtractor()
+        self.extractor = MemoryExtractor(anthropic_key=anthropic_key)
         self.calibrator = Calibrator(self.engine)
 
     def store(self, subject: str, relation: str, obj: str, **kwargs) -> str:

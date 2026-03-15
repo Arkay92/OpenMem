@@ -32,6 +32,26 @@ def test_hydration(temp_pnme):
     hydrated = temp_pnme.hydrate(prompt)
     assert "a paperclip" in hydrated
 
+def test_multi_role_query(temp_pnme):
+    # Store a complete fact
+    temp_pnme.store("alice", "works_at", "wonderland")
+    
+    # Query with only subject (Stage 10 multi-role handling)
+    res = temp_pnme.query(subject="alice")
+    assert len(res) > 0
+    symbols = res[0]["extracted_symbols"]
+    assert symbols["relation"]["symbol"] == "works_at"
+    assert symbols["object"]["symbol"] == "wonderland"
+
+def test_absorb(temp_pnme):
+    # Test regex-based absorption (Stage 11 composite)
+    text = "Bob likes pizza. Alice is a coder."
+    count = temp_pnme.absorb(text)
+    assert count >= 2
+    
+    res = temp_pnme.query(subject="bob", relation="likes")
+    assert res[0]["record"].object == "pizza"
+
 def test_safety_integration(temp_pnme):
     temp_pnme.store("user", "key", "sk-123456789012345678901234567890")
     res = temp_pnme.query(subject="user")[0]

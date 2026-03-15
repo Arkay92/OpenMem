@@ -23,34 +23,24 @@ def associate_recall(query_v, memories, top_k=5):
     results.sort(key=lambda x: x["similarity"], reverse=True)
     return results[:top_k]
 
-def find_target(query_v, memories, encoder, missing_role, subject=None, relation=None, obj=None, top_k=5):
+def find_target(query_v, memories, encoder, missing_roles, subject=None, relation=None, obj=None, top_k=5):
     """
-    Implement 'role-unbinding mode' retrieval.
-    Given a partial query and memories, unbind the missing role to find candidates.
+    Implement 'role-unbinding mode' retrieval for one or more missing roles.
     """
+    if isinstance(missing_roles, str):
+        missing_roles = [missing_roles]
+        
     candidates = []
     
-    # Identify the target role vector for unbinding
-    if missing_role == "subject":
-        role_v = encoder.role_subject
-    elif missing_role == "relation":
-        role_v = encoder.role_relation
-    elif missing_role == "object":
-        role_v = encoder.role_object
-    else:
-        # Fallback to associate recall if role is ambiguous or context-only
-        results = associate_recall(query_v, memories, top_k=top_k)
-        # Map keys to match find_target's expected output
-        return [
-            {
-                "symbol": None,
-                "confidence": r["similarity"],
-                "source_memory": r["memory"]
-            }
-            for r in results
-        ]
+    # Map role names to role vectors
+    role_map = {
+        "subject": encoder.role_subject,
+        "relation": encoder.role_relation,
+        "object": encoder.role_object,
+        "context": encoder.role_context
+    }
 
-    # For each memory, optionally filter symbolically, then unbind
+    # For each memory, optionally filter symbolically, then unbind all missing roles
     for mem in memories:
         # Symbolic Filtering (Hybrid Retrieval)
         if subject and mem.get('subject') != subject: continue
@@ -59,26 +49,42 @@ def find_target(query_v, memories, encoder, missing_role, subject=None, relation
 
         vector = mem["vector"] if isinstance(mem, dict) else mem.vector
         
-        # Role-Unbinding: target_v = unbind(Memory, Role_Missing)
-        extracted_v = unbind(vector, role_v)
+        extracted_results = {}
+        total_max_sim = 0.0
         
-        # Match against known symbols in the encoder's cache
-        best_sym = None
-        max_sim = -1.0
-        for sym, base_v in encoder.symbol_map.items():
-            sim = similarity(extracted_v, base_v)
-            if sim > max_sim:
-                max_sim = sim
-                best_sym = sym
+        for role in missing_roles:
+            role_v = role_map.get(role)
+            if role_v is None: continue
+            
+            # Role-Unbinding: candidate_v = unbind(Memory, Role_Missing)
+            target_v = unbind(vector, role_v)
+            
+            # Match against known symbols
+            best_sym = None
+            max_sim = -1.0
+            for sym, base_v in encoder.symbol_map.items():
+                sim = similarity(target_v, base_v)
+                if sim > max_sim:
+                    max_sim = sim
+                    best_sym = sym
+            
+            extracted_results[role] = {"symbol": best_sym, "confidence": max_sim}
+            total_max_sim += max_sim
         
-        # If the query provided a partial match, we can also score the memory similarity
-        # to the partial query bundle itself.
-        match_sim = similarity(query_v, vector) if query_v is not None else 1.0
-        
-        if max_sim > 0.1:
+        # If no missing roles were processed (empty query or something), use associate_recall
+        if not missing_roles:
+            match_sim = similarity(query_v, vector) if query_v is not None else 1.0
+            total_max_sim = match_sim
+        else:
+            # Average confidence across missing roles, then combine with query match sim
+            avg_conf = total_max_sim / len(missing_roles)
+            match_sim = similarity(query_v, vector) if query_v is not None else 1.0
+            total_max_sim = avg_conf * match_sim
+
+        if total_max_sim > 0.05:
             candidates.append({
-                "symbol": best_sym,
-                "confidence": max_sim * match_sim, # Combined confidence
+                "extracted_symbols": extracted_results,
+                "confidence": total_max_sim,
                 "source_memory": mem
             })
             

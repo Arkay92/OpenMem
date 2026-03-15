@@ -13,7 +13,10 @@ authors = [
     {name = "Antigravity Agent"}
 ]
 dependencies = [
-    "numpy>=1.20.0"
+    "numpy>=1.20.0",
+    "anthropic>=0.7.0",
+    "rich>=12.0.0",
+    "tqdm>=4.60.0"
 ]
 
 [tool.setuptools.packages.find]

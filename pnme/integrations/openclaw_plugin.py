@@ -12,25 +12,24 @@ class PNMEPlugin:
             "store_memory": self.store_memory,
             "query_memory": self.query_memory,
             "recall_associations": self.recall_associations,
-            "retrieve_context": self.retrieve_context
+            "get_context": self.get_context
         }
 
     def store_memory(self, subject, relation, object_val, context=""):
         """Store a fact."""
-        return self.pnme.store(subject, relation, object_val, context)
+        return self.pnme.store(subject, relation, object_val, context=context)
 
-    def query_memory(self, subject=None, relation=None, object_val=None):
+    def query_memory(self, subject=None, relation=None, object_val=None, top_k=5):
         """Query facts."""
-        return self.pnme.query(subject, relation, object_val)
+        return self.pnme.query(subject=subject, relation=relation, obj=object_val, top_k=top_k)
 
-    def recall_associations(self, subject=None, relation=None, object_val=None):
+    def recall_associations(self, subject=None, relation=None, object_val=None, top_k=5):
         """HDC-based associative recall."""
-        # In this implementation, query() already does associative recall if one part is missing
-        return self.pnme.query(subject, relation, object_val)
+        return self.pnme.query(subject=subject, relation=relation, obj=object_val, top_k=top_k)
 
-    def retrieve_context(self, keywords):
+    def get_context(self, keywords):
         """Get contextually relevant memories."""
-        return self.pnme.retrieve_context(keywords)
+        return self.pnme.get_context(keywords)
 
 # Factory function for OpenClaw
 def setup_plugin(config):

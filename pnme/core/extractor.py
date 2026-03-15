@@ -1,5 +1,6 @@
 import re
-from typing import List, Tuple, Dict, Any
+import json
+from typing import List, Tuple, Dict, Any, Optional
 
 class BaseExtractor:
     def extract_triples(self, text: str) -> List[Tuple[str, str, str]]:
@@ -32,6 +33,48 @@ class RegexExtractor(BaseExtractor):
         
         return list(set(triples))
 
+class LLMExtractor(BaseExtractor):
+    """
+    Extracts high-fidelity facts using an LLM (Anthropic Claude).
+    """
+    def __init__(self, api_key: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+        self.api_key = api_key
+        self.model = model
+        self.client = None
+        if api_key:
+            try:
+                import anthropic
+                self.client = anthropic.Anthropic(api_key=api_key)
+            except ImportError:
+                pass
+
+    def extract_triples(self, text: str) -> List[Tuple[str, str, str]]:
+        if not self.client:
+            return []
+
+        prompt = (
+            "Extract semantic facts from the following text as a JSON list of triples. "
+            "Return ONLY the JSON list. Each triple should be [subject, relation, object]. "
+            "Normalize to lower case. Be concise.\n\n"
+            f"Text: \"{text}\""
+        )
+
+        try:
+            response = self.client.messages.create(
+                model=self.model,
+                max_tokens=1000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            content = response.content[0].text
+            # Attempt to find JSON list in output
+            match = re.search(r'\[.*\]', content, re.DOTALL)
+            if match:
+                data = json.loads(match.group())
+                return [tuple(map(str, t)) for t in data if len(t) == 3]
+        except Exception:
+            return []
+        return []
+
 class CompositeExtractor(BaseExtractor):
     """
     Orchestrates multiple extractors and merges results.
@@ -46,9 +89,15 @@ class CompositeExtractor(BaseExtractor):
         return list(set(all_triples))
 
 class MemoryExtractor(CompositeExtractor):
-    """Backward compatible class name for the engine."""
-    def __init__(self):
-        super().__init__([RegexExtractor()])
+    """
+    The main extraction interface for PNME.
+    Defaults to regex; enables LLM if api_key is provided.
+    """
+    def __init__(self, anthropic_key: Optional[str] = None):
+        extractors = [RegexExtractor()]
+        if anthropic_key:
+            extractors.append(LLMExtractor(api_key=anthropic_key))
+        super().__init__(extractors)
 
     def extract_from_logs(self, dialogue_logs: List[Dict[str, str]]) -> List[Tuple[str, str, str]]:
         all_triples = []

@@ -42,34 +42,29 @@ class HDCEncoder:
 
     def encode_query(self, subject=None, relation=None, object_val=None, context=None):
         """
-        Produce a partial-query bundle vector and identify the missing role.
-        Formula: bundle([bind(Role_i, Symbol_i) for i in known_roles])
+        Produce a partial-query bundle vector and identify missing roles.
+        Returns: (query_vector, missing_roles_list)
         """
         known = []
-        missing = None
+        missing = []
 
         if subject is None:
-            missing = "subject"
+            missing.append("subject")
         else:
             known.append(bind(self.role_subject, self.get_vector(subject)))
 
         if relation is None:
-            missing = "relation" if missing is None else "multiple"
+            missing.append("relation")
         else:
             known.append(bind(self.role_relation, self.get_vector(relation)))
 
         if object_val is None:
-            missing = "object" if missing is None else "multiple"
+            missing.append("object")
         else:
             known.append(bind(self.role_object, self.get_vector(object_val)))
 
         if context is not None:
             known.append(bind(self.role_context, self.get_vector(context)))
-
-        if missing == "multiple":
-            # For now, we only support one missing role in direct associative recall
-            # and unbinding.
-            pass
 
         query_v = bundle(known) if known else None
         return query_v, missing
