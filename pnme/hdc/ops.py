@@ -1,7 +1,10 @@
 import numpy as np
 
-def create_vector(dim=10000):
+def create_vector(dim=10000, seed=None):
     """Create a random bipolar vector (-1, 1)."""
+    if seed is not None:
+        rng = np.random.default_rng(seed)
+        return rng.choice([-1, 1], size=dim).astype(np.int8)
     return np.random.choice([-1, 1], size=dim).astype(np.int8)
 
 def bind(v1, v2):

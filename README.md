@@ -10,9 +10,14 @@ pip install .
 
 ## Features
 
-- **Semantic Memory**: Store and retrieve facts as (Subject, Relation, Object) triples.
-- **HDC Encoding**: Uses 10,000-dimensional vectors for robust associative recall.
-- **Persistence**: SQLite-backed storage for cross-session long-term memory.
+- **Semantic Memory**: Store and retrieve facts as (Subject, Relation, Object) triples with rich metadata.
+- **HDC Encoding**: Uses 10,000-dimensional vectors with **Role-Vector Binding** for robust associative recall.
+- **Hybrid Retrieval**: Ranked results combining symbolic matching, HDC similarity, recency, and memory strength.
+- **Memory Lifecycle**: Biological-inspired reinforcement, decay, and consolidation (Episodic -> Semantic).
+- **Context Hydration**: Automated keyword-based context injection for agent prompts.
+- **Memory Extraction**: Automatic distillation of semantic facts from dialogue logs.
+- **Safety & Privacy**: Inbuilt secret detection and redaction for sensitive info (API keys, etc.).
+- **Persistence**: SQLite-backed storage with WAL mode and versioned migrations.
 - **Agent Integration**: Pre-built tools for Claude Code and plugins for OpenClaw.
 
 ## Quick Start
@@ -42,12 +47,9 @@ from pnme.integrations.claude_tools import get_claude_tools, handle_tool_call
 
 # Get tool definitions for Claude's tool use
 tools = get_claude_tools()
-
-# Example usage in a tool handler
-# result = handle_tool_call(name="memory_store", arguments={"subject": "user", ...})
 ```
 
-Supported tools: `memory_store`, `memory_query`, `memory_context`.
+Supported tools: `memory_store`, `memory_query`, `memory_hydrate`, `memory_extract`.
 
 ### OpenClaw
 

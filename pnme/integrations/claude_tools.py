@@ -10,12 +10,24 @@ def get_claude_tools():
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "subject": {"type": "string", "description": "The subject of the memory (e.g., 'user')"},
-                    "relation": {"type": "string", "description": "The relationship (e.g., 'prefers_language')"},
-                    "object": {"type": "string", "description": "The object or value (e.g., 'rust')"},
-                    "context": {"type": "string", "description": "Additional context or notes"}
+                    "subject": {"type": "string", "description": "The subject of the fact."},
+                    "relation": {"type": "string", "description": "The relationship (e.g., likes, owner_of, version)."},
+                    "object": {"type": "string", "description": "The object or value."},
+                    "context": {"type": "string", "description": "Optional context where this was learned."},
+                    "memory_type": {"type": "string", "enum": ["semantic", "episodic"], "description": "Type of memory."}
                 },
                 "required": ["subject", "relation", "object"]
+            }
+        },
+        {
+            "name": "memory_hydrate",
+            "description": "Retrieve relevant long-term context for a given prompt or topic.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string", "description": "The prompt or text to find context for."}
+                },
+                "required": ["text"]
             }
         },
         {
@@ -49,8 +61,15 @@ def get_claude_tools():
 
 def handle_tool_call(name, arguments):
     if name == "memory_store":
-        memory.store(arguments["subject"], arguments["relation"], arguments["object"], arguments.get("context", ""))
-        return "Memory stored successfully."
+        return memory.store(
+            arguments["subject"],
+            arguments["relation"],
+            arguments["object"],
+            source="claude_code",
+            **{k: v for k, v in arguments.items() if k not in ["subject", "relation", "object"]}
+        )
+    elif name == "memory_hydrate":
+        return memory.hydrator.hydrate_context(arguments["text"])
     elif name == "memory_query":
         results = memory.query(subject=arguments.get("subject"), relation=arguments.get("relation"), obj=arguments.get("object"))
         return str(results)
