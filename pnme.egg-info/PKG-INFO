@@ -1,0 +1,53 @@
+Metadata-Version: 2.4
+Name: pnme
+Version: 0.1.0
+Summary: Persistent Neuro-Symbolic Memory Engine using Hyperdimensional Computing
+Author: Antigravity Agent
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: numpy>=1.20.0
+
+# PNME: Persistent Neuro-Symbolic Memory Engine
+
+PNME is a long-term memory layer for AI agents, combining **Hyperdimensional Computing (HDC)** with **Symbolic Reasoning**. It works with Claude Code, OpenClaw, and any Python agent framework.
+
+## Installation
+
+```bash
+pip install .
+```
+
+## Features
+
+- **Semantic Memory**: Store and retrieve facts as (Subject, Relation, Object) triples.
+- **HDC Encoding**: Uses 10,000-dimensional vectors for robust associative recall.
+- **Persistence**: SQLite-backed storage for cross-session long-term memory.
+- **Agent Integration**: Pre-built tools for Claude Code and plugins for OpenClaw.
+
+## Quick Start
+
+```python
+from pnme.api import PNME
+
+# Initialize engine
+memory = PNME("memory.db")
+
+# Store a fact
+memory.store("user", "prefers", "rust", context="session_1")
+
+# Query with associative recall
+results = memory.query(subject="user", relation="prefers")
+print(results[0]['symbol']) # Output: rust
+```
+
+## Project Structure
+
+- `pnme/hdc`: Vector operations and encoding.
+- `pnme/storage`: Persistence layer.
+- `pnme/core`: Main engine and recall logic.
+- `pnme/integrations`: Claude and OpenClaw adapters.
+
+## License
+
+MIT

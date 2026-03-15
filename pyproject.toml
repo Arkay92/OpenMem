@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pnme"
+version = "0.1.0"
+description = "Persistent Neuro-Symbolic Memory Engine using Hyperdimensional Computing"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "Antigravity Agent"}
+]
+dependencies = [
+    "numpy>=1.20.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pnme*"]

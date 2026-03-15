@@ -1,0 +1,16 @@
+README.md
+pyproject.toml
+pnme/__init__.py
+pnme/api.py
+pnme.egg-info/PKG-INFO
+pnme.egg-info/SOURCES.txt
+pnme.egg-info/dependency_links.txt
+pnme.egg-info/requires.txt
+pnme.egg-info/top_level.txt
+pnme/core/engine.py
+pnme/core/recall.py
+pnme/hdc/encoder.py
+pnme/hdc/ops.py
+pnme/integrations/claude_tools.py
+pnme/integrations/openclaw_plugin.py
+pnme/storage/sqlite_store.py
