@@ -59,14 +59,24 @@ def find_target(query_v, memories, encoder, missing_roles, subject=None, relatio
             # Role-Unbinding: candidate_v = unbind(Memory, Role_Missing)
             target_v = unbind(vector, role_v)
             
-            # Match against known symbols
-            best_sym = None
-            max_sim = -1.0
-            for sym, base_v in encoder.symbol_map.items():
-                sim = similarity(target_v, base_v)
-                if sim > max_sim:
-                    max_sim = sim
-                    best_sym = sym
+            # Vectorized Match (Stage 13 optimization)
+            if encoder.symbol_map:
+                symbols = list(encoder.symbol_map.keys())
+                # Stack all base vectors into a matrix (dim, num_symbols)
+                symbol_matrix = np.stack(list(encoder.symbol_map.values()))
+                
+                # Compute similarities in bulk (dot product for bipolar (+1/-1) vectors)
+                # similarity = dot(v1, v2) / (norm(v1) * norm(v2))
+                # For bipolar vectors of dimension D, norm is sqrt(D)
+                dot_products = np.dot(symbol_matrix, target_v.astype(np.float64))
+                similarities = dot_products / (np.sqrt(encoder.dim) * np.sqrt(encoder.dim))
+                
+                idx = np.argmax(similarities)
+                max_sim = similarities[idx]
+                best_sym = symbols[idx]
+            else:
+                best_sym = None
+                max_sim = -1.0
             
             extracted_results[role] = {"symbol": best_sym, "confidence": max_sim}
             total_max_sim += max_sim

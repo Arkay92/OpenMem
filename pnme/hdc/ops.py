@@ -18,12 +18,8 @@ def unbind(v1, v2):
 def bundle(vectors):
     """Bundling operation: element-wise sum followed by thresholding."""
     v_sum = np.sum(vectors, axis=0)
-    # Threshold at 0. Randomly break ties (0) with [-1, 1]
-    bundled = np.sign(v_sum).astype(np.int8)
-    # Handle zeros (ties)
-    zeros = (bundled == 0)
-    if np.any(zeros):
-        bundled[zeros] = np.random.choice([-1, 1], size=np.sum(zeros))
+    # Threshold at 0. Mapping 0 to +1 for determinism (Stage 13 hardening)
+    bundled = np.where(v_sum >= 0, 1, -1).astype(np.int8)
     return bundled
 
 def permute(v, shift=1):

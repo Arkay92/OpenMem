@@ -13,12 +13,17 @@ class RegexExtractor(BaseExtractor):
     def __init__(self):
         # Improved patterns to handle multi-word subjects/objects
         self.patterns = [
-            (r'(?P<subject>[\w\s\-\.\']+?) likes (?P<object>[\w\s\-\.\']+?)(?=\. | \. | \n|$)', 'likes'),
-            (r'(?P<subject>[\w\s\-\.\']+?) is (?P<object>[\w\s\-\.\']+?)(?=\. | \. | \n|$)', 'is_a'),
-            (r'(?P<subject>[\w\s\-\.\']+?) prefers (?P<object>[\w\s\-\.\']+?)(?=\. | \. | \n|$)', 'prefers'),
-            (r'(?P<subject>[\w\s\-\.\']+?) works with (?P<object>[\w\s\-\.\']+?)(?=\. | \. | \n|$)', 'collaborates_with'),
-            (r'(?P<subject>[\w\s\-\.\']+?) knows (?P<object>[\w\s\-\.\']+?)(?=\. | \. | \n|$)', 'knows'),
-            (r'(?P<subject>[\w\s\-\.\']+?) learned (?P<object>[\w\s\-\.\']+?)(?=\. | \. | \n|$)', 'learned'),
+            (r'(?P<subject>[\w\s\-\.\']+?) likes (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'likes'),
+            (r'(?P<subject>[\w\s\-\.\']+?) is (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'is_a'),
+            (r'(?P<subject>[\w\s\-\.\']+?) prefers (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'prefers'),
+            (r'(?P<subject>[\w\s\-\.\']+?) works at (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'works_at'),
+            (r'(?P<subject>[\w\s\-\.\']+?) works with (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'collaborates_with'),
+            (r'(?P<subject>[\w\s\-\.\']+?) lives in (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'lives_in'),
+            (r'(?P<subject>[\w\s\-\.\']+?) moved to (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'moved_to'),
+            (r'(?P<subject>[\w\s\-\.\']+?) knows (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'knows'),
+            (r'(?P<subject>[\w\s\-\.\']+?) uses (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'uses'),
+            (r'(?P<subject>[\w\s\-\.\']+?) learned (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'learned'),
+            (r'(?P<subject>[\w\s\-\.\']+?) has (?P<object>[\w\s\-\.\']+?)(?=\.|\n|$)', 'has'),
         ]
 
     def extract_triples(self, text: str) -> List[Tuple[str, str, str]]:
