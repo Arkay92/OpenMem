@@ -20,7 +20,7 @@ def test_openclaw_skills(openclaw_setup):
     skills["store_memory"]("charlie", "is", "a cat")
     res = skills["query_memory"](subject="charlie")
     assert len(res) > 0
-    assert res[0]["record"].object == "a cat"
+    assert res[0]["object"] == "a cat"
 
 def test_openclaw_context(openclaw_setup):
     plugin = openclaw_setup
@@ -29,4 +29,4 @@ def test_openclaw_context(openclaw_setup):
     skills["store_memory"]("charlie", "is", "a cat")
     ctx = skills["retrieve_context"](["cat"])
     assert len(ctx) > 0
-    assert "charlie" in ctx[0]["record"].subject
+    assert "charlie" in ctx[0]["subject"]

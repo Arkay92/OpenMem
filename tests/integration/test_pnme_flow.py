@@ -14,13 +14,13 @@ def temp_pnme():
 
 def test_full_write_query_clear(temp_pnme):
     # 1. Write
-    mid = temp_pnme.store("clippy", "is", "a paperclip")
-    assert mid is not None
+    res_store = temp_pnme.store("clippy", "is", "a paperclip")
+    assert "memory_id" in res_store
     
     # 2. Query Symbolic
     res = temp_pnme.query(subject="clippy", relation="is")
     assert len(res) > 0
-    assert res[0]["record"].object == "a paperclip"
+    assert res[0]["object"] == "a paperclip"
     
     # 3. Query HDC Context
     ctx = temp_pnme.get_context(["paperclip"])
@@ -35,12 +35,12 @@ def test_hydration(temp_pnme):
 def test_regex_repairs(temp_pnme):
     # Test hyphens and dots (repaired regex Stage)
     text = "DeepSeek-V3 is a model. Claude-3.5 is fast."
-    count = temp_pnme.absorb(text)
-    assert count >= 2
+    res_absorb = temp_pnme.absorb(text)
+    assert res_absorb["count"] >= 2
     
     res = temp_pnme.query(subject="deepseek-v3")
     assert len(res) > 0
-    assert res[0]["record"].object == "a model"
+    assert res[0]["object"] == "a model"
 
 def test_multi_role_query(temp_pnme):
     # Store a complete fact
@@ -63,4 +63,4 @@ def test_multi_role_query(temp_pnme):
 def test_safety_integration(temp_pnme):
     temp_pnme.store("user", "key", "sk-123456789012345678901234567890")
     res = temp_pnme.query(subject="user")[0]
-    assert "REDACTED" in res["record"].object
+    assert "REDACTED" in res["object"]

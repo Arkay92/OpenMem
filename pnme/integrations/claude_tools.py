@@ -66,18 +66,18 @@ class ClaudeMemoryAdapter:
     def handle_tool_call(self, name: str, arguments: Dict[str, Any]) -> str:
         try:
             if name == "memory_store":
-                mid = self.memory.store(
+                res = self.memory.store(
                     arguments["subject"],
                     arguments["relation"],
                     arguments["object"],
                     source="claude_code",
                     **{k: v for k, v in arguments.items() if k not in ["subject", "relation", "object"]}
                 )
-                return json.dumps({"status": "success", "memory_id": mid})
+                return json.dumps({"status": "success", "memory_id": res["memory_id"]})
 
             elif name == "memory_absorb":
-                count = self.memory.absorb(arguments["text"], source="claude_code")
-                return json.dumps({"status": "success", "facts_learned": count})
+                res = self.memory.absorb(arguments["text"], source="claude_code")
+                return json.dumps({"status": "success", "facts_learned": res["count"], "memory_ids": res["memory_ids"]})
 
             elif name == "memory_query":
                 results = self.memory.query(
@@ -88,10 +88,9 @@ class ClaudeMemoryAdapter:
                 # Format records for readable tool output
                 output = []
                 for res in results:
-                    rec = res["record"]
                     output.append({
-                        "fact": f"{rec.subject} {rec.relation} {rec.object}",
-                        "score": round(res["score"], 3),
+                        "fact": f"{res['subject']} {res['relation']} {res['object']}",
+                        "score": res["score"],
                         "explanation": res["explanation"]
                     })
                 return json.dumps(output, indent=2)
